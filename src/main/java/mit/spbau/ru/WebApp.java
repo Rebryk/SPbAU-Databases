@@ -41,6 +41,9 @@ public class WebApp {
     private final static Integer MAX_CONNECTION_AGE = 5 * 60 * 1000;
     private final static JdbcPooledConnectionSource connectionSource;
 
+    private final static Integer CACHE_SIZE = 10000;
+    private final static LruObjectCache cache = new LruObjectCache(CACHE_SIZE);
+
     private enum IsolationLevel {
         REPEATABLE_READ("REPEATABLE READ"),
         READ_COMMITTED("READ COMMITTED");
@@ -100,6 +103,7 @@ public class WebApp {
         response.type("text/plain");
 
         final Dao<Drug, Integer> daoDrug = DaoManager.createDao(connectionSource, Drug.class);
+        daoDrug.setObjectCache(cache);
 
         return runTransaction(IsolationLevel.REPEATABLE_READ,
                 () -> DaoManager.createDao(connectionSource, Drug.class)
@@ -114,6 +118,7 @@ public class WebApp {
             final String type = request.queryMap("dosage").value();
 
             final Dao<DrugType, Integer> daoDrugType = DaoManager.createDao(connectionSource, DrugType.class);
+            daoDrugType.setObjectCache(cache);
 
             final List<DrugType> types = daoDrugType
                     .queryBuilder()
@@ -128,6 +133,7 @@ public class WebApp {
             System.out.println(types.get(0).getType());
 
             final Dao<Drug, Integer> daoDrug = DaoManager.createDao(connectionSource, Drug.class);
+            daoDrug.setObjectCache(cache);
 
             final Drug drug = new Drug(0,
                     request.queryMap("trade_name").value(),
